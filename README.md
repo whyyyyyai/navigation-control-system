@@ -226,7 +226,7 @@ the owner the exact command.
 | `claude` | Claude Code | `claude`, then the vendor's prompts |
 | `grok` | Grok CLI | `grok`, then the vendor's prompts |
 | `gravity` | `agy` (Antigravity CLI) | `agy`, Google sign-in |
-| `alice`, `juno` | Bots inside the Grok Bot app | Open the app and sign in |
+| `alice` | A bot inside the Grok Bot app | Open the app and sign in |
 | `codex` | Codex CLI, optional | `codex` |
 | `lumo` | Proton Lumo desktop app | On hold until the owner asks |
 
@@ -278,7 +278,7 @@ chmod 600 ~/.config/comms-deck/private-names
 App seats:
 
 ```bash
-printf '%s\n' 'alice' 'juno hidden' 'lumo:lumo-desktop hidden' \
+printf '%s\n' 'alice' 'lumo:lumo-desktop hidden' \
   > ~/.config/comms-deck/app-seats
 ```
 
