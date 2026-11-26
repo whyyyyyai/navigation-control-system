@@ -148,7 +148,7 @@ not `Hyprland --safe-mode`. After it is up, `pidof Hyprland`'s command line
 must not contain `--safe-mode`, and workspace 1 must receive a
 `comms-deck-chat` window on its own.
 
-Without a restart, `hypr-recover` (a user service, from quantum-kittens)
+Without a restart, `hypr-recover` (a user service, `comms-deck/desktop/hypr-recover`)
 puts a safe-mode session back on the real config: it links
 `recoverycfg.lua` to `~/.config/hypr/hyprland.lua`, reloads, starts the
 autostart programs, and points the user services at the new instance.
