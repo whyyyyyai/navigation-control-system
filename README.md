@@ -16,10 +16,26 @@ is the package-and-install detail. If that file and this one disagree
 about the program, the newer `docs/SETUP.md` on `test` wins. This file
 wins for rebuild order, the desktop layout, and safe mode.
 
-State below is the shape of the system on 2026-11-24. Live commands win
+State below is the shape of the system on 2026-11-26. Live commands win
 over this page when they disagree.
 
-Written by: Grok (2026-11-24).
+Written by: Grok (2026-11-24). Updated by: Claude (2026-11-26).
+
+## After a restart: one command
+
+This manual is for a machine that has to be rebuilt. After an ordinary
+restart or shutdown, nothing here is needed. Run:
+
+```bash
+gh repo clone whyyyyyai/launch-codes ~/launch-codes   # only if it is missing
+~/launch-codes/launch.sh
+```
+
+It clones or fast-forwards every repo, links the programs, installs the
+owner's config, starts the services, opens the decks, runs the self-tests,
+and lists missing secrets. Read every line marked `!`. Before a planned
+shutdown, run `~/launch-codes/snapshot.sh` (see
+[launch-codes](https://github.com/whyyyyyai/launch-codes), private).
 
 ---
 
@@ -33,8 +49,9 @@ Written by: Grok (2026-11-24).
 - `systemctl --user is-active comms-deck push-courier` prints `active` twice.
 - `comms-deck status` shows each seat the owner asked for as `busy` or
   `idle`, and `can wake`, except seats the owner has paused or not set up.
-- The command deck (the chat screen) is fullscreen on workspace 5.
-- Grok's kitty is on the scratchpad `special:magic`, top left.
+- The command deck (the chat screen) is fullscreen on workspace 1, the
+  comms deck (Super+`). See [The decks](#the-decks).
+- The agents' kittys are on the scratchpad `special:magic`.
 - A note from the chat screen to `@grok` comes back as a reply on that screen.
 
 ---
@@ -128,8 +145,14 @@ when that file exists.
 **[owner]** Restarting Hyprland closes every window. Ask first. The owner
 starts a normal session from the display manager (uwsm / `hyprland-uwsm`),
 not `Hyprland --safe-mode`. After it is up, `pidof Hyprland`'s command line
-must not contain `--safe-mode`, and workspace 5 must receive a
+must not contain `--safe-mode`, and workspace 1 must receive a
 `comms-deck-chat` window on its own.
+
+Without a restart, `hypr-recover` (a user service, from quantum-kittens)
+puts a safe-mode session back on the real config: it links
+`recoverycfg.lua` to `~/.config/hypr/hyprland.lua`, reloads, starts the
+autostart programs, and points the user services at the new instance.
+Try that before asking for a restart.
 
 ---
 
@@ -141,16 +164,35 @@ lost file, start from the Hyprland 0.57 example Lua config and add the
 two blocks below. If the file is already there, do not replace it. Only
 add a block that is missing.
 
-Command deck, fullscreen on workspace 5, without stealing focus:
+Command deck, fullscreen on workspace 1 (the comms deck), without
+stealing focus:
 
 ```lua
 hl.window_rule({
     name       = "comms-deck-chat",
     match      = { class = "^comms-deck-chat$" },
-    workspace  = "5 silent",
+    workspace  = "1 silent",
     fullscreen = true,
 })
 ```
+
+### The decks
+
+Each desktop is a deck: a numbered workspace with a `default_name`
+(`hl.workspace_rule({ workspace = "1", default_name = "comms" })`), so
+waybar keeps key order. A workspace with only a name sorts alphabetically
+in waybar, and Hyprland rejects a workspace named "0".
+
+| Key | Workspace | Deck |
+| --- | --- | --- |
+| Super+` | 1 | comms: the chat, full screen, half view under it |
+| Super+1 | 2 | nav: nav-deck, full screen |
+| Super+2 | 3 | mail: the mail client, full screen |
+| Super+3 … Super+0 | 4 … 11 | named "3" … "0" |
+
+The owner's copy of `hyprland.lua` and the login list
+(`~/.config/quantum-kittens/launch.conf`) are kept in launch-codes under
+`home/`.
 
 Scratchpad (Super+S shows it, Super+Shift+S moves a window onto it):
 
@@ -210,8 +252,13 @@ Work branches from `test` and merges back into `test` by pull request.
 The owner merges `test` into `main`, then `main` into `live`. Agents do
 not merge those. `live` is what a machine runs. Do not point the service
 at `test` just because you cloned it. `comms-deck install` links whatever
-checkout is at `~/comms-deck`. Leave that checkout on the branch the owner
-already runs, or on `main` if the machine is new. Ask before changing it.
+checkout is at `~/comms-deck`. That checkout is the live tree: the
+service, the hooks and every agent's MCP run it. It stays on `test` (the
+branch this machine runs as of 2026-11-26). Never check out another branch
+there; use `git worktree add ~/comms-deck-<job> <branch>`. The service
+guards it: if the live tree leaves `test` and nothing can be lost, it is
+put back and the owner is told; otherwise the owner is told and nothing is
+touched.
 
 ---
 
@@ -258,7 +305,7 @@ only after the owner asks.
 The first command only prints what it will change. The second links
 `comms-deck`, `push-courier`, `comms-deck-chat`, and `scratchpad-layout`
 into `~/.local/bin`, writes hooks and MCP config for each agent it finds,
-enables the user services, and adds the workspace 5 rule.
+enables the user services, and adds the chat-screen rule (workspace 1).
 
 Machine-local settings, never committed:
 
@@ -307,7 +354,7 @@ comms-deck-chat
 ```
 
 That window's class is `comms-deck-chat`. With the real config loaded it
-goes fullscreen on workspace 5 by itself.
+goes fullscreen on workspace 1 by itself.
 
 ### What each status means
 
@@ -334,17 +381,21 @@ Text that stays only in your own window is not on the deck.
 
 ## Phase 6. Put the windows back
 
-`scratchpad-layout` (installed by phase 5) moves whatever is open onto
-`special:magic` without switching the current workspace. It skips a
-program that is not open.
+`launch-desktop` (quantum-kittens) opens what `launch.conf` lists and
+is missing, then runs `scratchpad-layout`, which moves the agents onto
+`special:magic` and the deck windows onto their decks by number, without
+switching the current workspace. It skips a program that is not open.
+`scratchpad-keeper` (a user service) keeps them there.
 
 ```text
 +-----------+-----------+-----------------------+
-|   Grok    | Grok Bot  |                       |
-+-----------+-----------+        Firefox        |
-|        Claude         |                       |
+|   Grok    | Grok Bot  |         Vibe          |
++-----------+-----------+-----------------------+
+|        Claude         |         Devin         |
 +-----------------------+-----------------------+
 ```
+
+Grok Bot is off in `launch.conf` for now; its cell stays empty.
 
 ```bash
 scratchpad-layout
@@ -361,12 +412,11 @@ then fullscreen it. `follow = false` keeps the owner's current view.
 
 ```bash
 # address from: hyprctl clients -j
-hyprctl dispatch 'hl.dsp.window.move({ window = "address:ADDRESS", workspace = "5", follow = false })'
+hyprctl dispatch 'hl.dsp.window.move({ window = "address:ADDRESS", workspace = "1", follow = false })'
 hyprctl dispatch 'hl.dsp.window.fullscreen({ action = "set", window = "address:ADDRESS" })'
 ```
 
-Do not close a terminal you did not open. A kitty that only launched
-Firefox can stay on workspace 1.
+Do not close a terminal you did not open.
 
 ---
 
